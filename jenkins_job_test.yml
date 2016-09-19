@@ -27,9 +27,13 @@
   tasks:
     - name: Call system test
       jenkins_job:
-        url: http://172.17.0.2:8080/job/test1
+        host: http://172.17.0.2:8080
+        job: /job/test1
         token: token1
         params:
+        username: admin
+        password: 57033f8c2abc058d3b154cd79735f012
+        force_basic_auth: yes
 
 - hosts: localhost
   connection: local
