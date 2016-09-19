@@ -1,0 +1,67 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: start
+      docker_container:
+        name: "{{name}}"
+        hostname: "{{name}}"
+        image: centos:6
+        state: started
+        tty: yes
+        keep_volumes: no
+
+    - name: add container to inventory
+      add_host:
+        name: "{{name}}"
+        ansible_host: "{{name}}"
+        ansible_user: root
+        ansible_connection: docker
+      changed_when: false
+  vars:
+      name: test1
+
+- hosts: test1
+  gather_facts: no
+  tasks:
+      - name: get next build number
+        uri:
+          url: "{{job_url}}/api/json?token={{token}}&tree=nextBuildNumber"
+        register: bn
+
+      - name: call job
+        uri:
+          url: "{{job_url}}/build?token={{token}}"
+          methos: POST
+          status_code: 201
+          body_format: json
+
+      - name: get last completed build
+        uri:
+          url: "{{job_url}}/api/json?token={{token}}"
+          methods: GET
+          status_code: 200
+          body_format: json
+        register: lastCompletedBuild
+        until: lastCompletedBuild.json.lastCompletedBuild.number == bn.json.nextBuildNumber
+        retries: 10
+        delay: 10
+
+      - name: check build status
+        debug: msg={{lastCompletedBuild.json.lastCompletedBuild}}
+        failed_when: lastCompletedBuild.json.lastSuccessfulBuild.number != bn.json.nextBuildNumber
+  vars:
+      job_url: http://172.17.0.2:8080/job/test1
+      token: token1
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: destroy build container
+      docker_container:
+        name: "{{name}}"
+        state: absent
+  vars:
+      name: test1
