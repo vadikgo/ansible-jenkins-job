@@ -112,10 +112,15 @@ def main():
                 url_password=password, force_basic_auth=force_basic_auth))['nextBuildNumber']
 
     # Jenkins CSRF Protection
-    crumb = json.load(open_url(urlparse.urljoin(host, "/crumbIssuer/api/json"),\
-                    validate_certs=validate_certs, url_username=username,\
-                    url_password=password, force_basic_auth=force_basic_auth))
-    token = token + "&" + crumb['crumbRequestField'] + "=" + crumb['crumb']
+    try:
+        csrf = open_url(urlparse.urljoin(host, "/crumbIssuer/api/json"),\
+                        validate_certs=validate_certs, url_username=username,\
+                        url_password=password, force_basic_auth=force_basic_auth)
+        crumb = json.load(csrf)
+        token = token + "&" + crumb['crumbRequestField'] + "=" + crumb['crumb']
+    except urllib2.HTTPError as err:
+        if err.code != 404:
+            raise
 
     if params in ["", None]:
         jobUrl = "{0}/build?token={1}".format(url, token)
