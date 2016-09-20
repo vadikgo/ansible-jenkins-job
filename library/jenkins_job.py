@@ -92,7 +92,8 @@ def main():
             username = dict(required=False, default=None),
             password = dict(required=False, default=None),
             validate_certs = dict(required=False, default=True)
-        )
+        ),
+        supports_check_mode=True
     )
 
     host = module.params["host"]
@@ -126,6 +127,9 @@ def main():
         jobUrl = "{0}/build?token={1}".format(url, token)
     else:
         jobUrl = "{0}/buildWithParameters?token={1}&{2}".format(url, token, params)
+
+    if module.check_mode:
+        module.exit_json(changed=True, msg="open url: {0}".format(jobUrl))
 
     code = open_url(jobUrl, method='POST', validate_certs=validate_certs, url_username=username,\
                     url_password=password, force_basic_auth=force_basic_auth).getcode()
