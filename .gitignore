@@ -8,3 +8,4 @@
 .*vault_pass.txt
 *.retry
 roles/
+.vscode
