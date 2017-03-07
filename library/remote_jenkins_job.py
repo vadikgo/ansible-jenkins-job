@@ -1,8 +1,9 @@
     #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import time
-import urllib2
-from ansible.module_utils.six.moves.urllib.parse import urljoin
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 try:
     import json
@@ -11,7 +12,7 @@ except ImportError:
 
 DOCUMENTATION = '''
 ---
-module: jenkins_job
+module: remote_jenkins_job
 short_description: Call remote Jenkins job
 description:
     - Call remote jenkins job
@@ -37,28 +38,24 @@ options:
             - May be "" or null
         required: false
         default: null
-    timeout:
+    span:
         description:
-            - Time in seconds for wait successfully job execution
+            - Time in seconds for wait between job status checking
         required: false
-        default: 600
-    force_basic_auth:
+        default: 10
+    retry:
         description:
-          - The library used by the uri module only sends authentication information when a webservice
-            responds to an initial request with a 401 status. Since some basic auth services do not properly
-            send a 401, logins will fail. This option forces the sending of the Basic authentication header
-            upon initial request.
-            required: false
-        choices: [ "yes", "no" ]
-        default: "no"
+            - Count of job status checking retries
+        required: false
+        default: 30
     user:
         description:
-            - username for the module to use for Digest, Basic or WSSE authentication.
+            - User name
         required: false
         default: null
     password:
         description:
-            - password for the module to use for Digest, Basic or WSSE authentication.
+            - User password.
         required: false
         default: null
     validate_certs:
@@ -72,15 +69,16 @@ options:
 '''
 EXAMPLES = '''
 - name: Call system test
-  jenkins_job:
+  remote_jenkins_job:
     host: http://172.17.0.2:8080
     job: /job/test1
     token: token1
     username: admin
     password: 57033f8c2abc058d3b154cd79735f012
-    force_basic_auth: yes
     params: URL=https://10.116.111.179&APP_PORT=9443&JSON_PORT=9080&TAGS=test*
 '''
+
+urljoin = lambda urls: '/'.join([p.strip('/') for p in urls])
 
 def main():
     module = AnsibleModule(
@@ -89,61 +87,61 @@ def main():
             job = dict(required=True),
             token = dict(required=True),
             params = dict(required=False, default=None),
-            timeout = dict(required=False, default=600),
-            force_basic_auth = dict(required=False, default=False),
+            span = dict(required=False, default=10, type='int'),
+            retry = dict(required=False, default=30, type='int'),
             username = dict(required=False, default=None),
             password = dict(required=False, default=None),
-            validate_certs = dict(required=False, default=True)
+            validate_certs = dict(required=False, default=True, type='bool')
         ),
         supports_check_mode=True
     )
 
     host = module.params["host"]
     job = module.params["job"]
-    url = urljoin(host, job)
+    url = urljoin([host, job])
     token = module.params["token"]
     params = module.params["params"]
-    timeout = module.params["timeout"]
+    span = module.params["span"]
+    retry = module.params["retry"]
     validate_certs = module.params["validate_certs"]
-    force_basic_auth = module.params["force_basic_auth"]
     username = module.params["username"]
     password = module.params["password"]
 
-    nextBuildNumber = json.load(\
-                open_url("{0}/api/json?token={1}&tree=nextBuildNumber".\
-                format(url, token), validate_certs=validate_certs, url_username=username,\
-                url_password=password, force_basic_auth=force_basic_auth))['nextBuildNumber']
-
     # Jenkins CSRF Protection
-    try:
-        csrf = open_url(urljoin(host, "/crumbIssuer/api/json"),\
-                        validate_certs=validate_certs, url_username=username,\
-                        url_password=password, force_basic_auth=force_basic_auth)
-        crumb = json.load(csrf)
+    r = requests.get(urljoin([host, "/crumbIssuer/api/json"]), auth=(username, password), verify=validate_certs)
+
+    if r.status_code in [401, 403]:
+        module.fail_json(changed=True, msg="Access denied with http status code %i" % r.status_code)
+
+    if r.status_code != 404:
+        crumb = r.json()
         token = token + "&" + crumb['crumbRequestField'] + "=" + crumb['crumb']
-    except urllib2.HTTPError as err:
-        if err.code != 404:
-            raise
+
+    r = requests.get("{0}?token={1}&tree=nextBuildNumber".format(urljoin([url, '/api/json']), token),
+                            auth=(username, password), verify=validate_certs)
+
+    if r.status_code != 200:
+        module.fail_json(changed=True, msg="Job status failed with http status code %i" % r.status_code)
+
+    nextBuildNumber = r.json()['nextBuildNumber']
 
     if params in ["", None]:
-        jobUrl = "{0}/build?token={1}".format(url, token)
+        jobUrl = "{0}?token={1}".format(urljoin([url, '/build']), token)
     else:
-        jobUrl = "{0}/buildWithParameters?token={1}&{2}".format(url, token, params)
+        jobUrl = "{0}?token={1}&{2}".format(urljoin([url, '/buildWithParameters']), token, params)
 
     if module.check_mode:
         module.exit_json(changed=True, msg="open url: {0}".format(jobUrl))
 
-    code = open_url(jobUrl, method='POST', validate_certs=validate_certs, url_username=username,\
-                    url_password=password, force_basic_auth=force_basic_auth).getcode()
+    code = requests.post(jobUrl, auth=(username, password), verify=validate_certs).status_code
     if code not in [200, 201]:
         module.fail_json(
             msg="Jenkins job url {0} execute failed with HTTP code {1}".format(jobUrl, code)
         )
 
-    for i in range(int(timeout)/10):
-        lastCompletedBuild = json.load(open_url("{0}/api/json?token={1}".format(url, token),\
-            validate_certs=validate_certs, url_username=username, url_password=password,\
-            force_basic_auth=force_basic_auth))
+    for i in range(retry):
+        lastCompletedBuild = requests.get("{0}?token={1}".format(urljoin([url, '/api/json']), token),
+            auth=(username, password), verify=validate_certs).json()
         if lastCompletedBuild['lastCompletedBuild']['number'] == nextBuildNumber:
             if lastCompletedBuild['lastSuccessfulBuild']['number'] == nextBuildNumber:
                 module.exit_json(
@@ -154,7 +152,7 @@ def main():
                 module.fail_json(
                     msg="Jenkins job execute failed: {0}".format(lastCompletedBuild['lastCompletedBuild']['url'])
                 )
-        time.sleep(10)
+        time.sleep(span)
 
     module.fail_json(
         msg="Jenkins job wait timeout: {0}".format(url)
