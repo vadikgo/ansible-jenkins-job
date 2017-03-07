@@ -5,11 +5,6 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 DOCUMENTATION = '''
 ---
 module: remote_jenkins_job
