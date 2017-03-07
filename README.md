@@ -2,7 +2,7 @@
 
 Call remote Jenkins jobs from shell:
 
-```
+```bash
 ansible localhost -m remote_jenkins_job -a "host=https://jenkins.example.com/jenkins \
 job=/job/TEST/job/mytest2/ token=lalalala params='param1=lala' username=jenkins-username \
 password=b0b522504bdf38ddae22169220dc08d0 validate_certs=False"
@@ -10,7 +10,7 @@ password=b0b522504bdf38ddae22169220dc08d0 validate_certs=False"
 
 Call remote Jenkins jobs from task:
 
-```
+```yaml
 - name: Call system test
   remote_jenkins_job:
     host: http://172.17.0.2:8080
