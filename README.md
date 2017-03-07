@@ -1,6 +1,12 @@
 ### jenkins_job
 
-Call remote Jenkins jobs
+Call remote Jenkins jobs from shell:
+
+```
+ansible localhost -i hosts.ift -m jenkins_job -a "host='https://sbt-jenkins.ca.sbrf.ru' job='jenkins/job/App1/job/test-job1/' token='vrvrtest' params='ENDPOINT=https://{{was_dmgr_host}}:9443' username='jenkins-username' password='b0b522504bdf38ddae22169220dc08d0'"
+```
+
+Call remote Jenkins jobs from task:
 
 ```
 - name: Call system test
@@ -32,4 +38,4 @@ Call remote Jenkins jobs
 
 * `user` - username for the module to use for Digest, Basic or WSSE authentication.
 
-* `password` - password for the module to use for Digest, Basic or WSSE authentication.
+* `password` - password or jenkins's password hash.

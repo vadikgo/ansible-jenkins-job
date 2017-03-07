@@ -1,6 +1,8 @@
-#!/usr/bin/python
+    #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import time
+import urllib2
+from ansible.module_utils.six.moves.urllib.parse import urljoin
 
 try:
     import json
@@ -98,7 +100,7 @@ def main():
 
     host = module.params["host"]
     job = module.params["job"]
-    url = urlparse.urljoin(host, job)
+    url = urljoin(host, job)
     token = module.params["token"]
     params = module.params["params"]
     timeout = module.params["timeout"]
@@ -114,7 +116,7 @@ def main():
 
     # Jenkins CSRF Protection
     try:
-        csrf = open_url(urlparse.urljoin(host, "/crumbIssuer/api/json"),\
+        csrf = open_url(urljoin(host, "/crumbIssuer/api/json"),\
                         validate_certs=validate_certs, url_username=username,\
                         url_password=password, force_basic_auth=force_basic_auth)
         crumb = json.load(csrf)
