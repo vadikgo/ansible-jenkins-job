@@ -1,6 +1,10 @@
 #!/usr/bin/python
+"""
+Ansible module for call remote Jenkins job
+"""
 # -*- coding: utf-8 -*-
 import time
+from ansible.module_utils.basic import AnsibleModule
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -78,15 +82,15 @@ urljoin = lambda urls: '/'.join([p.strip('/') for p in urls])
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            host = dict(required=True),
-            job = dict(required=True),
-            token = dict(required=True),
-            params = dict(required=False, default=None),
-            span = dict(required=False, default=10, type='int'),
-            retry = dict(required=False, default=30, type='int'),
-            username = dict(required=False, default=None),
-            password = dict(required=False, default=None),
-            validate_certs = dict(required=False, default=True, type='bool')
+            host=dict(required=True),
+            job=dict(required=True),
+            token=dict(required=True),
+            params=dict(required=False, default=None),
+            span=dict(required=False, default=10, type='int'),
+            retry=dict(required=False, default=30, type='int'),
+            username=dict(required=False, default=None),
+            password=dict(required=False, default=None),
+            validate_certs=dict(required=False, default=True, type='bool')
         ),
         supports_check_mode=True
     )
@@ -103,22 +107,26 @@ def main():
     password = module.params["password"]
 
     # Jenkins CSRF Protection
-    r = requests.get(urljoin([host, "/crumbIssuer/api/json"]), auth=(username, password), verify=validate_certs)
+    req = requests.get(urljoin([host, "/crumbIssuer/api/json"]),
+                       auth=(username, password), verify=validate_certs)
 
-    if r.status_code in [401, 403]:
-        module.fail_json(changed=True, msg="Access denied with http status code %i" % r.status_code)
+    if req.status_code in [401, 403]:
+        module.fail_json(changed=True,
+                         msg="Access denied with http status code %i" % req.status_code)
 
-    if r.status_code != 404:
-        crumb = r.json()
+    if req.status_code != 404:
+        crumb = req.json()
         token = token + "&" + crumb['crumbRequestField'] + "=" + crumb['crumb']
 
-    r = requests.get("{0}?token={1}&tree=nextBuildNumber".format(urljoin([url, '/api/json']), token),
-                            auth=(username, password), verify=validate_certs)
+    req = requests.get("{0}?token={1}&tree=nextBuildNumber".format(\
+                       urljoin([url, '/api/json']), token),
+                       auth=(username, password), verify=validate_certs)
 
-    if r.status_code != 200:
-        module.fail_json(changed=True, msg="Job status failed with http status code %i" % r.status_code)
+    if req.status_code != 200:
+        module.fail_json(changed=True,
+                         msg="Job status failed with http status code %i" % req.status_code)
 
-    nextBuildNumber = r.json()['nextBuildNumber']
+    nextBuildNumber = req.json()['nextBuildNumber']
 
     if params in ["", None]:
         jobUrl = "{0}?token={1}".format(urljoin([url, '/build']), token)
@@ -134,18 +142,21 @@ def main():
             msg="Jenkins job url {0} execute failed with HTTP code {1}".format(jobUrl, code)
         )
 
-    for i in range(retry):
-        lastCompletedBuild = requests.get("{0}?token={1}".format(urljoin([url, '/api/json']), token),
-            auth=(username, password), verify=validate_certs).json()
+    for _ in range(retry):
+        lastCompletedBuild = requests.get("{0}?token={1}"\
+                             .format(urljoin([url, '/api/json']), token),
+                                          auth=(username, password), verify=validate_certs).json()
         if lastCompletedBuild['lastCompletedBuild']['number'] == nextBuildNumber:
             if lastCompletedBuild['lastSuccessfulBuild']['number'] == nextBuildNumber:
                 module.exit_json(
                     changed=True,
-                    msg="Jenkins job executed successfully: {0}".format(lastCompletedBuild['lastCompletedBuild']['url'])
+                    msg="Jenkins job executed successfully: {0}"\
+                    .format(lastCompletedBuild['lastCompletedBuild']['url'])
                 )
             else:
                 module.fail_json(
-                    msg="Jenkins job execute failed: {0}".format(lastCompletedBuild['lastCompletedBuild']['url'])
+                    msg="Jenkins job execute failed: {0}"\
+                    .format(lastCompletedBuild['lastCompletedBuild']['url'])
                 )
         time.sleep(span)
 
@@ -153,7 +164,5 @@ def main():
         msg="Jenkins job wait timeout: {0}".format(url)
     )
 
-from ansible.module_utils.basic import *
-from ansible.module_utils.urls import *
 if __name__ == "__main__":
     main()
