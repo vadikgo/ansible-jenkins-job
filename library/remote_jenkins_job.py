@@ -106,9 +106,14 @@ def main():
     username = module.params["username"]
     password = module.params["password"]
 
+    if (username is None) or (password is None):
+        jenkins_auth = ()
+    else:
+        jenkins_auth = (username, password)
+
     # Jenkins CSRF Protection
     req = requests.get(urljoin([host, "/crumbIssuer/api/json"]),
-                       auth=(username, password), verify=validate_certs)
+                       auth=(jenkins_auth), verify=validate_certs)
 
     if req.status_code in [401, 403]:
         module.fail_json(changed=True,
@@ -120,7 +125,7 @@ def main():
 
     req = requests.get("{0}?token={1}&tree=nextBuildNumber".format(\
                        urljoin([url, '/api/json']), token),
-                       auth=(username, password), verify=validate_certs)
+                       auth=jenkins_auth, verify=validate_certs)
 
     if req.status_code != 200:
         module.fail_json(changed=True,
@@ -136,7 +141,7 @@ def main():
     if module.check_mode:
         module.exit_json(changed=True, msg="open url: {0}".format(jobUrl))
 
-    code = requests.post(jobUrl, auth=(username, password), verify=validate_certs).status_code
+    code = requests.post(jobUrl, auth=jenkins_auth, verify=validate_certs).status_code
     if code not in [200, 201]:
         module.fail_json(
             msg="Jenkins job url {0} execute failed with HTTP code {1}".format(jobUrl, code)
@@ -145,23 +150,32 @@ def main():
     for _ in range(retry):
         lastCompletedBuild = requests.get("{0}?token={1}"\
                              .format(urljoin([url, '/api/json']), token),
-                                          auth=(username, password), verify=validate_certs).json()
+                                          auth=jenkins_auth, verify=validate_certs).json()
         if lastCompletedBuild['lastCompletedBuild']['number'] == nextBuildNumber:
-            if lastCompletedBuild['lastSuccessfulBuild']['number'] == nextBuildNumber:
+            if lastCompletedBuild['lastStableBuild']['number'] == nextBuildNumber:
                 module.exit_json(
                     changed=True,
-                    msg="Jenkins job executed successfully: {0}"\
-                    .format(lastCompletedBuild['lastCompletedBuild']['url'])
+                    msg="Jenkins job executed successfully: {0}".format(lastCompletedBuild['lastCompletedBuild']['url']),
+                    status="SUCCESS",
+                    response=lastCompletedBuild
                 )
-            else:
-                module.fail_json(
-                    msg="Jenkins job execute failed: {0}"\
-                    .format(lastCompletedBuild['lastCompletedBuild']['url'])
+            if lastCompletedBuild['lastUnstableBuild']['number'] == nextBuildNumber:
+                module.exit_json(
+                    changed=True,
+                    msg="Jenkins job executed successfully: {0}".format(lastCompletedBuild['lastCompletedBuild']['url']),
+                    status="UNSTABLE",
+                    response=lastCompletedBuild
                 )
+            module.fail_json(
+                msg="Jenkins job execute failed: {0}".format(lastCompletedBuild['lastCompletedBuild']['url']),
+                status="FAILURE",
+                response=lastCompletedBuild
+            )
         time.sleep(span)
 
     module.fail_json(
-        msg="Jenkins job wait timeout: {0}".format(url)
+        msg="Jenkins job wait timeout: {0}".format(url),
+        status='TIMEOUT'
     )
 
 if __name__ == "__main__":
