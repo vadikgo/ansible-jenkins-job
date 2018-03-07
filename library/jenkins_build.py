@@ -171,7 +171,7 @@ class JenkinsJob:
 
     def build_job(self):
         result = self.result
-        if self.job_exists():
+        if not self.module.check_mode and self.job_exists():
             self.server.build_job(self.name, self.params)
             if self.wait_build:
                 last_build_number = self.wait_job_build()
