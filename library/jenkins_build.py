@@ -119,7 +119,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
 
 
-class JenkinsJob:
+class JenkinsBuild:
 
     def __init__(self, module):
         self.module = module
@@ -205,7 +205,7 @@ def main():
     )
 
     test_dependencies(module)
-    jenkins_job = JenkinsJob(module)
+    jenkins_job = JenkinsBuild(module)
 
     result = jenkins_job.build_job()
     module.exit_json(**result)
