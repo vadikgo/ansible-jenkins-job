@@ -1,6 +1,49 @@
-### remote_jenkins_job
+## Build Jenkins jobs by using Jenkins REST API
 
-Call remote Jenkins jobs from shell:
+### Requirements
+
+python-jenkins >= 0.4.12
+
+### Build job from shell:
+
+```bash
+ansible localhost -m jenkins_build -a "name='test' user='admin' password='admin' url='http://localhost:32769'" -M ./library
+```
+
+### Build Jenkins job from task:
+
+```yaml
+- jenkins_job:
+    params:
+        'param1': 'test value 1'
+        'param2': 'test value 2'
+    name: test
+    token: asdfasfasfasdfasdfadfasfasdfasdfc
+    url: http://localhost:8080
+    user: admin
+```
+
+### Parameters
+
+* params - Dictionary with job parameters
+
+* name - Name of the Jenkins job
+
+* password - Password to authenticate with the Jenkins server
+
+* token - API token used to authenticate alternatively to password
+
+* url - Url where the Jenkins server is accessible
+
+* user - User to authenticate with the Jenkins server
+
+* wait_build - Wait last build to complete
+
+* wait_build_timeout - Wait last build timeout, sec
+
+## remote_jenkins_job
+
+### Call remote Jenkins jobs from shell:
 
 ```bash
 ansible localhost -m remote_jenkins_job -a "host=https://jenkins.example.com/jenkins \
@@ -8,7 +51,7 @@ job=/job/TEST/job/mytest2/ token=lalalala params='param1=lala' username=jenkins-
 password=b0b522504bdf38ddae22169220dc08d0 validate_certs=False"
 ```
 
-Call remote Jenkins jobs from task:
+### Call remote Jenkins jobs from task:
 
 ```yaml
 - name: Call system test
@@ -21,7 +64,7 @@ Call remote Jenkins jobs from task:
     params: URL=https://10.116.111.179&APP_PORT=9443&JSON_PORT=9080&TAGS=test*
 ```
 
-#### options
+### Parameters
 
 * `host` - Jenkins server url in the form (http|https)://host.domain[:port]/site_root
 

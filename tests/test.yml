@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - jenkins_build:
+        params:
+          'param1': 'test value 1'
+          'param2': 'test value 2'
+        name: test
+        url: http://localhost:32769
+        user: admin
+        password: admin
