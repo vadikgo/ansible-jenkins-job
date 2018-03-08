@@ -171,9 +171,9 @@ class JenkinsBuild:
 
     def wait_job_build(self):
         for _ in range(1, self.wait_build_timeout):
-            if self.server.get_job_info(self.name)['lastBuild']['number'] == \
-                self.server.get_job_info(self.name)['lastCompletedBuild']['number']:
-                return self.server.get_job_info(self.name)['lastBuild']['number']
+            job_info = self.server.get_job_info(self.name)
+            if job_info['lastBuild']['number'] == job_info['lastCompletedBuild']['number']:
+                return
             else:
                 time.sleep(1)
         self.module.fail_json(msg='Job build complete timeout exceed, %s for %s' % (self.name,
@@ -185,9 +185,8 @@ class JenkinsBuild:
         if not self.module.check_mode and self.job_exists():
             self.server.build_job(self.name, self.params, self.build_token)
             if self.wait_build:
-                last_build_number = self.wait_job_build()
-            else:
-                last_build_number = self.server.get_job_info(self.name)['lastBuild']['number']
+                self.wait_job_build()
+            last_build_number = self.server.get_job_info(self.name)['lastBuild']['number']
             result['build_info'] = self.server.get_build_info(self.name, last_build_number)
             del result['build_info']['actions']
         return result
