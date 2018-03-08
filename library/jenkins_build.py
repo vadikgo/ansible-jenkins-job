@@ -172,7 +172,9 @@ class JenkinsBuild:
     def wait_job_build(self):
         for _ in range(1, self.wait_build_timeout):
             job_info = self.server.get_job_info(self.name)
-            if job_info['lastBuild']['number'] == job_info['lastCompletedBuild']['number']:
+            if job_info['lastBuild'] != None and \
+               job_info['lastCompletedBuild'] != None and \
+               job_info['lastBuild']['number'] == job_info['lastCompletedBuild']['number']:
                 return
             else:
                 time.sleep(1)
@@ -186,7 +188,8 @@ class JenkinsBuild:
             self.server.build_job(self.name, self.params, self.build_token)
             if self.wait_build:
                 self.wait_job_build()
-            last_build_number = self.server.get_job_info(self.name)['lastBuild']['number']
+            job_info = self.server.get_job_info(self.name)
+            last_build_number = job_info['lastBuild']['number']
             result['build_info'] = self.server.get_build_info(self.name, last_build_number)
             del result['build_info']['actions']
         return result
