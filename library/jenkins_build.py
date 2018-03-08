@@ -58,6 +58,10 @@ options:
       - Wait last build timeout, sec
     required: false
     default: 600
+  build_token:
+    descripton:
+      - Token for building job
+    required: false
 '''
 
 EXAMPLES = '''
@@ -95,6 +99,12 @@ EXAMPLES = '''
     url: http://localhost:8080
     user: admin
     wait_build: false
+
+# Build a jenkins job anonymously with job token
+- jenkins_job:
+    name: test
+    url: http://localhost:8080
+    build_token: token_eDahX3ve
 '''
 
 RETURN = '''
@@ -133,6 +143,7 @@ class JenkinsBuild:
         self.server = self.get_jenkins_connection()
         self.wait_build = module.params.get('wait_build')
         self.wait_build_timeout = module.params.get('wait_build_timeout')
+        self.build_token = module.params.get('build_token')
 
         self.result = {
             'build_info': {}
@@ -172,7 +183,7 @@ class JenkinsBuild:
     def build_job(self):
         result = self.result
         if not self.module.check_mode and self.job_exists():
-            self.server.build_job(self.name, self.params)
+            self.server.build_job(self.name, self.params, self.build_token)
             if self.wait_build:
                 last_build_number = self.wait_job_build()
             else:
@@ -196,7 +207,8 @@ def main():
             url=dict(required=False, default="http://localhost:8080"),
             user=dict(required=False),
             wait_build=dict(required=False, default=True, type='bool'),
-            wait_build_timeout=dict(required=False, default=600, type='int')
+            wait_build_timeout=dict(required=False, default=600, type='int'),
+            build_token=dict(required=False, default=None, no_log=True)
         ),
         mutually_exclusive=[
             ['password', 'token'],

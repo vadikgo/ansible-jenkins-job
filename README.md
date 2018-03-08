@@ -23,6 +23,15 @@ ansible localhost -m jenkins_build -a "name='test' user='admin' password='admin'
     user: admin
 ```
 
+###  Build a jenkins job anonymously with job remote build token
+
+```yaml
+- jenkins_job:
+    name: test
+    url: http://localhost:8080
+    build_token: token_eDahX3ve
+```
+
 ### Parameters
 
 * params - Dictionary with job parameters
@@ -40,6 +49,8 @@ ansible localhost -m jenkins_build -a "name='test' user='admin' password='admin'
 * wait_build - Wait last build to complete
 
 * wait_build_timeout - Wait last build timeout, sec
+
+* build_token - Token for building job
 
 ## remote_jenkins_job
 
