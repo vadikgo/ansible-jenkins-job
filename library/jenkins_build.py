@@ -193,11 +193,15 @@ class JenkinsBuild:
                 if e.message == 'Error in request. Possibly authentication failed [500]: Server Error':
                     self.module.fail_json(msg="Error in request. Possibly call job that can't handle parameters. "
                          "Server Error 500.")
+                else:
+                    self.module.fail_json(msg=e.message, exception=traceback.format_exc())
             except urllib2.HTTPError as e:
                 if e.msg == 'Nothing is submitted':
                     # pass random parameter if it not defined in params field
                     # Job is build with default parameters
                     self.server.build_job(self.name, {uuid.uuid4():uuid.uuid4()}, self.build_token)
+                else:
+                    self.module.fail_json(msg=e.msg, exception=traceback.format_exc())                
             if self.wait_build:
                 self.wait_job_build()
             job_info = self.server.get_job_info(self.name)
