@@ -3,8 +3,8 @@
   connection: local
   tasks:
     - jenkins_build:
-        params:
-          p1: 111
+        #params:
+        #  p1: 111
         name: test
         url: http://localhost:8080
         user: admin
