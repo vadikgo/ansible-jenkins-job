@@ -145,6 +145,7 @@ class JenkinsBuild:
         self.wait_build = module.params.get('wait_build')
         self.wait_build_timeout = module.params.get('wait_build_timeout')
         self.build_token = module.params.get('build_token')
+        self.build_number = 1
 
         self.result = {
             'build_info': {}
@@ -172,13 +173,10 @@ class JenkinsBuild:
 
     def wait_job_build(self):
         for _ in range(1, self.wait_build_timeout):
-            job_info = self.server.get_job_info(self.name)
-            if job_info['lastBuild'] != None and \
-               job_info['lastCompletedBuild'] != None and \
-               job_info['lastBuild']['number'] == job_info['lastCompletedBuild']['number']:
-                return
-            else:
+            if self.server.get_build_info(self.name, self.build_number)['building']:
                 time.sleep(1)
+            else:
+                return
         self.module.fail_json(msg='Job build complete timeout exceed, %s for %s' % (self.name,
                               self.jenkins_url),
                               exception=traceback.format_exc())       
@@ -187,6 +185,7 @@ class JenkinsBuild:
         result = self.result
         if not self.module.check_mode and self.job_exists():
             try:
+                self.build_number = self.server.get_job_info(self.name)['nextBuildNumber']
                 self.server.build_job(self.name, self.params, self.build_token)
             except Exception as e:
                 if str(e) == 'Error in request. Possibly authentication failed [500]: Server Error':
@@ -200,9 +199,7 @@ class JenkinsBuild:
                     self.module.fail_json(msg=str(e), exception=traceback.format_exc())                
             if self.wait_build:
                 self.wait_job_build()
-            job_info = self.server.get_job_info(self.name)
-            last_build_number = job_info['lastBuild']['number']
-            result['build_info'] = self.server.get_build_info(self.name, last_build_number)
+            result['build_info'] = self.server.get_build_info(self.name, self.build_number)
             del result['build_info']['actions']
         return result
 

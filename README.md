@@ -7,7 +7,7 @@ python-jenkins >= 0.4.12
 ### Build job from shell:
 
 ```bash
-ansible localhost -m jenkins_build -a "name='test' user='admin' password='admin' url='http://localhost:32769'" -M ./library
+ansible localhost -m jenkins_build -a "name='test' user='admin' password='admin' url='http://localhost:8080'" -M ./library
 ```
 
 ### Build Jenkins job from task:
