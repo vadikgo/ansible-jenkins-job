@@ -15,11 +15,11 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = '''
 ---
 author: Vladislav Gorbunov
-module: jenkins_script
+module: jenkins_run_script
 short_description: Executes a groovy script in the jenkins instance
 version_added: '2.5'
 description:
-    - The C(jenkins_script) module takes a script plus a dict of values
+    - The C(jenkins_run_script) module takes a script plus a dict of values
       to use within the script and returns the result of the script being run.
 requirements:
   - "python-jenkins >= 0.4.12"
@@ -71,7 +71,7 @@ notes:
 
 EXAMPLES = '''
 - name: Obtaining a list of plugins
-  jenkins_script:
+  jenkins_run_script:
     script: 'println(Jenkins.instance.pluginManager.plugins)'
     user: admin
     password: admin
@@ -83,12 +83,12 @@ EXAMPLES = '''
         instance.setMode(${jenkins_mode})
         instance.save()
 - name: use the variable as the script
-  jenkins_script:
+  jenkins_run_script:
     script: "{{ setmaster_mode }}"
     args:
       jenkins_mode: Node.Mode.EXCLUSIVE
 - name: interacting with an untrusted HTTPS connection
-  jenkins_script:
+  jenkins_run_script:
     script: "println(Jenkins.instance.pluginManager.plugins)"
     user: admin
     password: admin
