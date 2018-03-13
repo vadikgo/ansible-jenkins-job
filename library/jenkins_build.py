@@ -62,6 +62,10 @@ options:
     descripton:
       - Token for building job
     required: false
+notes:
+    - Since the build can do anything this does not report on changes.
+      Knowing the build is being run it's important to set changed_when
+      for the ansible output to be clear on any alterations made.
 '''
 
 EXAMPLES = '''
@@ -141,11 +145,12 @@ class JenkinsBuild:
         self.token = module.params.get('token')
         self.user = module.params.get('user')
         self.jenkins_url = module.params.get('url')
-        self.server = self.get_jenkins_connection()
         self.wait_build = module.params.get('wait_build')
         self.wait_build_timeout = module.params.get('wait_build_timeout')
         self.build_token = module.params.get('build_token')
         self.build_number = 1
+
+        self.server = self.get_jenkins_connection()
 
         self.result = {
             'build_info': {}
