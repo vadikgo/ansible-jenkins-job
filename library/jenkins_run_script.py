@@ -142,13 +142,13 @@ class JenkinsScript:
     def get_jenkins_connection(self):
         try:
             if (self.user and self.password):
-                return jenkins.Jenkins(self.url, self.user, self.password)
+                return jenkins.Jenkins(self.url, self.user, self.password, self.timeout)
             elif (self.user and self.token):
-                return jenkins.Jenkins(self.url, self.user, self.token)
+                return jenkins.Jenkins(self.url, self.user, self.token, self.timeout)
             elif (self.user and not (self.password or self.token)):
-                return jenkins.Jenkins(self.url, self.user)
+                return jenkins.Jenkins(self.url, self.user, timeout=self.timeout)
             else:
-                return jenkins.Jenkins(self.url)
+                return jenkins.Jenkins(self.url, timeout=self.timeout)
         except Exception as e:
             self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e), exception=traceback.format_exc())
 
