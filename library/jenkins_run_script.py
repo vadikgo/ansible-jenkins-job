@@ -160,7 +160,10 @@ class JenkinsScript:
         else:
             script_contents = self.script
         if not self.module.check_mode:
-            result['output'] = self.server.run_script(script_contents)
+            try:
+                result['output'] = self.server.run_script(script_contents)
+            except Exception as e:
+                self.module.fail_json(msg='Fail to run script, %s' % to_native(e), exception=traceback.format_exc())
         return result
 
 def test_dependencies(module):
