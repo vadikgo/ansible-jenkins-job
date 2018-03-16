@@ -68,6 +68,11 @@ options:
       - Include build console output in result
     required: false
     default: false
+  timeout:
+    description:
+      - The request timeout in seconds
+    required: false
+    default: 10
 notes:
     - Since the build can do anything this does not report on changes.
       Knowing the build is being run it's important to set changed_when
@@ -155,6 +160,7 @@ class JenkinsBuild:
         self.wait_build_timeout = module.params.get('wait_build_timeout')
         self.build_token = module.params.get('build_token')
         self.build_number = 1
+        self.timeout = module.params.get('timeout')
         self.console_output = module.params.get('console_output')
 
         self.server = self.get_jenkins_connection()
@@ -166,13 +172,13 @@ class JenkinsBuild:
     def get_jenkins_connection(self):
         try:
             if (self.user and self.password):
-                return jenkins.Jenkins(self.jenkins_url, self.user, self.password)
+                return jenkins.Jenkins(self.jenkins_url, self.user, self.password, self.timeout)
             elif (self.user and self.token):
-                return jenkins.Jenkins(self.jenkins_url, self.user, self.token)
+                return jenkins.Jenkins(self.jenkins_url, self.user, self.token, self.timeout)
             elif (self.user and not (self.password or self.token)):
-                return jenkins.Jenkins(self.jenkins_url, self.user)
+                return jenkins.Jenkins(self.jenkins_url, self.user, timeout=self.timeout)
             else:
-                return jenkins.Jenkins(self.jenkins_url)
+                return jenkins.Jenkins(self.jenkins_url, timeout=self.timeout)
         except Exception as e:
             self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e), exception=traceback.format_exc())
 
@@ -235,7 +241,8 @@ def main():
             user=dict(required=False),
             wait_build=dict(required=False, default=True, type='bool'),
             wait_build_timeout=dict(required=False, default=600, type='int'),
-            build_token=dict(required=False, default=None, no_log=True),
+            build_token = dict(required=False, default=None, no_log=True),
+            timeout=dict(required=False, type="int", default=10),
             console_output=dict(required=False, default=False, type='bool')
         ),
         mutually_exclusive=[

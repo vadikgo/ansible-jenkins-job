@@ -60,7 +60,7 @@ options:
     default: 10
   args:
     description:
-      - A dict of key-value pairs used in formatting the script using string.Template (see https://docs.python.org/2/library/string.html#template-strings).
+      - A dict of key-value pairs used in formatting the script using string. Template (see https://docs.python.org/2/library/string.html#template-strings). It's better to use ansible 'template' lookup for script parameter.
     required: false
     default: null
 notes:
