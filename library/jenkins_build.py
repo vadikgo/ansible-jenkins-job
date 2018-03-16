@@ -50,18 +50,24 @@ options:
     required: false
   wait_build:
     descripton:
-      - Wait last build to complete
+      - Wait until build is finished
     required: false
     default: true
   wait_build_timeout:
     descripton:
-      - Wait last build timeout, sec
+      - Wait until build is finished timeout, sec
     required: false
     default: 600
   build_token:
     descripton:
       - Token for building job
     required: false
+    default: None
+  console_output:
+    description:
+      - Include build console output in result
+    required: false
+    default: false
 notes:
     - Since the build can do anything this does not report on changes.
       Knowing the build is being run it's important to set changed_when
@@ -149,6 +155,7 @@ class JenkinsBuild:
         self.wait_build_timeout = module.params.get('wait_build_timeout')
         self.build_token = module.params.get('build_token')
         self.build_number = 1
+        self.console_output = module.params.get('console_output')
 
         self.server = self.get_jenkins_connection()
 
@@ -199,13 +206,17 @@ class JenkinsBuild:
                 elif str(e) == 'HTTP Error 400: Nothing is submitted':
                     # pass random parameter if it not defined in params field
                     # Job is build with default parameters
-                    self.server.build_job(self.name, {uuid.uuid4():uuid.uuid4()}, self.build_token)
+                    self.params = {uuid.uuid4(): uuid.uuid4()}
+                    self.build_job()
                 else:
                     self.module.fail_json(msg=str(e), exception=traceback.format_exc())                
             if self.wait_build:
                 self.wait_job_build()
             result['build_info'] = self.server.get_build_info(self.name, self.build_number)
             del result['build_info']['actions']
+            if self.console_output:
+                result['build_info']['console_output'] = self.server.get_build_console_output(
+                                                       self.name, number=self.build_number)
         return result
 
 def test_dependencies(module):
@@ -224,7 +235,8 @@ def main():
             user=dict(required=False),
             wait_build=dict(required=False, default=True, type='bool'),
             wait_build_timeout=dict(required=False, default=600, type='int'),
-            build_token=dict(required=False, default=None, no_log=True)
+            build_token=dict(required=False, default=None, no_log=True),
+            console_output=dict(required=False, default=False, type='bool')
         ),
         mutually_exclusive=[
             ['password', 'token'],
