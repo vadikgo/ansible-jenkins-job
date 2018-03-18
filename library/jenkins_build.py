@@ -128,7 +128,7 @@ build_info:
   description: Jenkins job build info.
   returned: success
   type: dict
-  sample: {u'building': False, u'queueId': 3, u'displayName': u'#2', u'description': None, u'changeSets': [], u'artifacts': [], u'timestamp': 1520431274718, u'previousBuild': {u'url': u'http://localhost:32769/job/test/1/', u'number': 1}, u'number': 2, u'id': u'2', u'keepLog': False, u'url': u'http://localhost:32769/job/test/2/', u'result': u'SUCCESS', u'executor': None, u'duration': 172, u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None, u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
+  sample: {u'building': False, u'queueId': 3, u'displayName': u'#2', u'description': None, u'changeSets': [], u'artifacts': [], u'timestamp': 1520431274718, u'previousBuild': {u'url': u'http://localhost:8080/job/test/1/', u'number': 1}, u'number': 2, u'id': u'2', u'keepLog': False, u'url': u'http://localhost:8080/job/test/2/', u'result': u'SUCCESS', u'executor': None, u'duration': 172, u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None, u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
 '''
 
 import traceback
@@ -180,14 +180,15 @@ class JenkinsBuild:
             else:
                 return jenkins.Jenkins(self.jenkins_url, timeout=self.timeout)
         except Exception as e:
-            self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e), exception=traceback.format_exc())
+            self.module.fail_json(msg='Unable to connect to Jenkins server, %s'% to_native(e),
+                                  exception=traceback.format_exc())
 
     def job_exists(self):
         try:
             return bool(self.server.job_exists(self.name))
         except Exception as e:
-            self.module.fail_json(msg='Unable to validate if job exists, %s for %s' % (to_native(e), self.jenkins_url),
-                                  exception=traceback.format_exc())
+            self.module.fail_json(msg='Unable to validate if job exists, %s for %s'%(to_native(e),
+                                  self.jenkins_url), exception=traceback.format_exc())
 
     def wait_job_build(self):
         for _ in range(1, self.wait_build_timeout):
@@ -207,8 +208,8 @@ class JenkinsBuild:
                 self.server.build_job(self.name, self.params, self.build_token)
             except Exception as e:
                 if str(e) == 'Error in request. Possibly authentication failed [500]: Server Error':
-                    self.module.fail_json(msg="Error in request. Possibly call job that can't handle parameters. "
-                         "Server Error 500.")
+                    self.module.fail_json(msg="Error in request. Possibly call job that can't handle "
+                                              "parameters. Server Error 500.")
                 elif str(e) == 'HTTP Error 400: Nothing is submitted':
                     # pass random parameter if it not defined in params field
                     # Job is build with default parameters

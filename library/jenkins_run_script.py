@@ -165,7 +165,8 @@ class JenkinsScript:
                 if 'Exception:' in result['output'] and 'at java.lang.Thread' in result['output']:
                     self.module.fail_json(msg="script failed with stacktrace:\n " + result['output'])
             except Exception as e:
-                self.module.fail_json(msg='Fail to run script, %s'% to_native(e), exception=traceback.format_exc())
+                self.module.fail_json(msg='Fail to run script, %s'% to_native(e),
+                                      exception=traceback.format_exc())
         return result
 
 def test_dependencies(module):
