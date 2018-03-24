@@ -16,21 +16,20 @@ DOCUMENTATION = '''
 ---
 module: jenkins_build
 short_description: Build jenkins jobs
+version_added: "2.6"
 description:
-    - Build Jenkins jobs by using Jenkins REST API.
+  - "Build Jenkins jobs by using Jenkins REST API."
 requirements:
   - "python-jenkins >= 0.4.12"
-version_added: "2.6"
-author: "Vladislav Gorbunov (@vadikso), Sergio Millan Rodriguez (@sermilrod)"
 options:
-  params:
-    description:
-      - Dictionary with job parameters.
-    required: false
   name:
     description:
       - Name of the Jenkins job.
     required: true
+  params:
+    description:
+      - Dictionary with job parameters.
+    required: false
   password:
     description:
       - Password to authenticate with the Jenkins server.
@@ -49,34 +48,36 @@ options:
        - User to authenticate with the Jenkins server.
     required: false
   wait_build:
-    descripton:
+    description:
       - Wait until build is finished
+    type: bool
     required: false
-    default: true
+    default: 'yes'
   wait_build_timeout:
-    descripton:
+    description:
       - Wait until build is finished timeout, sec
     required: false
     default: 600
   build_token:
-    descripton:
+    description:
       - Token for building job
     required: false
-    default: None
   console_output:
     description:
       - Include build console output in result
+    type: bool
     required: false
-    default: false
+    default: 'no'
   timeout:
     description:
       - The request timeout in seconds
     required: false
     default: 10
+author: "Vladislav Gorbunov (@vadikso), Sergio Millan Rodriguez (@sermilrod)"
 notes:
     - Since the build can do anything this does not report on changes.
       Knowing the build is being run it's important to set changed_when
-      for the ansible output to be clear on any alterations made.
+      for the build_info.console_output to be clear on any alterations made.
 '''
 
 EXAMPLES = '''
@@ -128,7 +129,14 @@ build_info:
   description: Jenkins job build info.
   returned: success
   type: dict
-  sample: {u'building': False, u'queueId': 3, u'displayName': u'#2', u'description': None, u'changeSets': [], u'artifacts': [], u'timestamp': 1520431274718, u'previousBuild': {u'url': u'http://localhost:8080/job/test/1/', u'number': 1}, u'number': 2, u'id': u'2', u'keepLog': False, u'url': u'http://localhost:8080/job/test/2/', u'result': u'SUCCESS', u'executor': None, u'duration': 172, u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None, u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
+  sample: >
+    {u'building': False, u'queueId': 3, u'displayName': u'#2', u'description': None, u'changeSets': [],
+    u'artifacts': [], u'timestamp': 1520431274718,
+    u'previousBuild': {u'url': u'http://localhost:8080/job/test/1/', u'number': 1},
+    u'number': 2, u'id': u'2', u'keepLog': False, u'url': u'http://localhost:8080/job/test/2/',
+    u'result': u'SUCCESS', u'executor': None, u'duration': 172,
+    u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None,
+    u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
 '''
 
 import traceback
@@ -180,25 +188,25 @@ class JenkinsBuild:
             else:
                 return jenkins.Jenkins(self.jenkins_url, timeout=self.timeout)
         except Exception as e:
-            self.module.fail_json(msg='Unable to connect to Jenkins server, %s'% to_native(e),
+            self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e),
                                   exception=traceback.format_exc())
 
     def job_exists(self):
         try:
             return bool(self.server.job_exists(self.name))
         except Exception as e:
-            self.module.fail_json(msg='Unable to validate if job exists, %s for %s'%(to_native(e),
+            self.module.fail_json(msg='Unable to validate if job exists, %s for %s' % (to_native(e),
                                   self.jenkins_url), exception=traceback.format_exc())
 
     def wait_job_build(self):
-        for _ in range(1, self.wait_build_timeout):
+        for dummy in range(1, self.wait_build_timeout):
             if self.server.get_build_info(self.name, self.build_number)['building']:
                 time.sleep(1)
             else:
                 return
         self.module.fail_json(msg='Job build complete timeout exceed, %s for %s' % (self.name,
                               self.jenkins_url),
-                              exception=traceback.format_exc())       
+                              exception=traceback.format_exc())
 
     def build_job(self):
         result = self.result
@@ -216,20 +224,22 @@ class JenkinsBuild:
                     self.params = {uuid.uuid4(): uuid.uuid4()}
                     self.build_job()
                 else:
-                    self.module.fail_json(msg=str(e), exception=traceback.format_exc())                
+                    self.module.fail_json(msg=str(e), exception=traceback.format_exc())
             if self.wait_build:
                 self.wait_job_build()
             result['build_info'] = self.server.get_build_info(self.name, self.build_number)
             del result['build_info']['actions']
             if self.console_output:
                 result['build_info']['console_output'] = self.server.get_build_console_output(
-                                                       self.name, number=self.build_number)
+                    self.name, number=self.build_number)
         return result
+
 
 def test_dependencies(module):
     if not python_jenkins_installed:
         module.fail_json(msg="python-jenkins required for this module. "
                          "see http://python-jenkins.readthedocs.io/en/latest/install.html")
+
 
 def main():
     module = AnsibleModule(
@@ -242,7 +252,7 @@ def main():
             user=dict(required=False),
             wait_build=dict(required=False, default=True, type='bool'),
             wait_build_timeout=dict(required=False, default=600, type='int'),
-            build_token = dict(required=False, default=None, no_log=True),
+            build_token=dict(required=False, default=None, no_log=True),
             timeout=dict(required=False, type="int", default=10),
             console_output=dict(required=False, default=False, type='bool')
         ),
