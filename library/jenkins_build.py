@@ -20,7 +20,7 @@ description:
     - Build Jenkins jobs by using Jenkins REST API.
 requirements:
   - "python-jenkins >= 0.4.12"
-version_added: "2.5"
+version_added: "2.6"
 author: "Vladislav Gorbunov (@vadikso), Sergio Millan Rodriguez (@sermilrod)"
 options:
   params:
