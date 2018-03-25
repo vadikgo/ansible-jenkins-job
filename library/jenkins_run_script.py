@@ -41,6 +41,7 @@ options:
       - If set to C(no), the SSL certificates will not be validated.
         This should only set to C(no) used on personally controlled sites
         using self-signed certificates as it avoids verifying the source site.
+    type: bool
     required: false
     default: True
   user:
@@ -53,6 +54,10 @@ options:
       - The password to connect to the jenkins server with.
     required: false
     default: null
+  token:
+    description:
+      - API token used to authenticate alternatively to password.
+    required: false
   timeout:
     description:
       - The request timeout in seconds
@@ -60,7 +65,9 @@ options:
     default: 10
   args:
     description:
-      - A dict of key-value pairs used in formatting the script using string. Template (see https://docs.python.org/2/library/string.html#template-strings). It's better to use ansible 'template' lookup for script parameter.
+      - A dict of key-value pairs used in formatting the script using string.
+        Template (see https://docs.python.org/2/library/string.html#template-strings).
+        It's better to use ansible 'template' lookup for script parameter.
     required: false
     default: null
 notes:
@@ -107,7 +114,6 @@ output:
 
 import traceback
 import time
-import uuid
 
 try:
     import jenkins
@@ -163,16 +169,18 @@ class JenkinsScript:
             try:
                 result['output'] = self.server.run_script(script_contents)
                 if 'Exception:' in result['output'] and 'at java.lang.Thread' in result['output']:
-                    self.module.fail_json(msg="script failed with stacktrace:\n " + result['output'])
+                    self.module.fail_json(msg="script failed with stacktrace:\n" + result['output'])
             except Exception as e:
-                self.module.fail_json(msg='Fail to run script, %s'% to_native(e),
+                self.module.fail_json(msg='Fail to run script, %s' % to_native(e),
                                       exception=traceback.format_exc())
         return result
+
 
 def test_dependencies(module):
     if not python_jenkins_installed:
         module.fail_json(msg="python-jenkins required for this module. "
                          "see http://python-jenkins.readthedocs.io/en/latest/install.html")
+
 
 def main():
     module = AnsibleModule(
