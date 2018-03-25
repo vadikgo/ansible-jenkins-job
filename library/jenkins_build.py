@@ -3,8 +3,20 @@
 # Copyright: (c) Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import traceback
+import time
+import uuid
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_native
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
+
+try:
+    import jenkins
+    python_jenkins_installed = True
+except ImportError:
+    python_jenkins_installed = False
 
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
@@ -138,19 +150,6 @@ build_info:
     u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None,
     u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
 '''
-
-import traceback
-import time
-import uuid
-
-try:
-    import jenkins
-    python_jenkins_installed = True
-except ImportError:
-    python_jenkins_installed = False
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_native
 
 
 class JenkinsBuild:

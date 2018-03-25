@@ -3,6 +3,18 @@
 # Copyright: (c) Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+import traceback
+import time
+
+try:
+    import jenkins
+    python_jenkins_installed = True
+except ImportError:
+    python_jenkins_installed = False
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_native
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
@@ -112,19 +124,6 @@ output:
 '''
 
 
-import traceback
-import time
-
-try:
-    import jenkins
-    python_jenkins_installed = True
-except ImportError:
-    python_jenkins_installed = False
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_native
-
-
 class JenkinsScript:
 
     def __init__(self, module):
@@ -156,7 +155,8 @@ class JenkinsScript:
             else:
                 return jenkins.Jenkins(self.url, timeout=self.timeout)
         except Exception as e:
-            self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e), exception=traceback.format_exc())
+            self.module.fail_json(msg='Unable to connect to Jenkins server, %s' % to_native(e),
+                                  exception=traceback.format_exc())
 
     def run_script(self):
         result = self.result
