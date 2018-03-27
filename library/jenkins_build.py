@@ -3,6 +3,10 @@
 # Copyright: (c) Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'community'}
@@ -134,9 +138,6 @@ build_info:
     u'_class': u'org.jenkinsci.plugins.workflow.job.WorkflowRun', u'nextBuild': None,
     u'fullDisplayName': u'test #2', u'estimatedDuration': 905}
 '''
-
-from __future__ import absolute_import, division, print_function
-__metaclass__ = type
 
 import traceback
 import time
