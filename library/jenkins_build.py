@@ -231,6 +231,7 @@ class JenkinsBuild:
             if self.console_output:
                 result['build_info']['console_output'] = self.server.get_build_console_output(
                     self.name, number=self.build_number)
+        result['changed'] = True
         return result
 
 
