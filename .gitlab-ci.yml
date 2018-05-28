@@ -1,0 +1,12 @@
+stages:
+  - tests
+
+jenkins:
+  image: registry.gitlab.com/vladgo/jenkins-docker:2.107.3
+  stage: tests
+  script:
+    - yum install -y python-pip
+    - pip install ansible ansible-lint python-jenkins lxml
+    - cd tests
+    - ansible-lint test.yml
+    - ansible-playbook -v test.yml

@@ -2,7 +2,23 @@
 - hosts: localhost
   connection: local
   tasks:
-    - jenkins_build:
+    - name: Create test job
+      jenkins_job:
+        config: |
+          <flow-definition plugin="workflow-job">
+          <description/>
+          <keepDependencies>false</keepDependencies>
+          <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+          <script>node { sh "python --version" }</script>
+          <sandbox>true</sandbox>
+          </definition>
+          </flow-definition>
+        name: test
+        password: admin
+        url: http://localhost:8080
+        user: admin
+    - name: Run test job
+      jenkins_build:
         #params:
         #  p1: 111
         name: test
@@ -10,3 +26,22 @@
         user: admin
         password: admin
         console_output: true
+    - name: Run script
+      jenkins_script:
+        script: |
+          Jenkins.instance.getAllItems(Job).each{
+            def jobBuilds=it.getBuilds()
+              jobBuilds.each { build ->
+                def runningSince = groovy.time.TimeCategory.minus( new Date(), build.getTime() )
+                def currentStatus = build.buildStatusSummary.message
+                def cause = build.getCauses()[0] //we keep the first cause
+                def user = cause instanceof Cause.UserIdCause? cause.getUserId():""
+                println "Build: ${build} | Since: ${runningSince} | Status: ${currentStatus} | Cause: ${cause} | User: ${user}" 
+                def parameters = build.getAction(ParametersAction)?.parameters
+                parameters.each {
+                  println "Type: ${it.class} Name: ${it.name}, Value: ${it.dump()}" 
+              }
+              }
+          }
+        user: admin
+        password: admin

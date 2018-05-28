@@ -142,7 +142,7 @@ class JenkinsScript:
         self.server = self.get_jenkins_connection()
 
         self.result = {
-            'output': {}
+            'output': ''
         }
 
     def get_jenkins_connection(self):
