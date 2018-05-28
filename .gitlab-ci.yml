@@ -10,3 +10,5 @@ jenkins:
     - cd tests
     - ansible-lint test.yml
     - ansible-playbook -v test.yml
+  tags:
+    - docker
