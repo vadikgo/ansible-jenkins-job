@@ -2,6 +2,19 @@
 - hosts: localhost
   connection: local
   tasks:
+    - name: Wait for Jenkins to start up before proceeding.
+      uri:
+        url: http://localhost:8080/cli/
+        return_content: yes
+        status_code: 200
+      register: result
+      until:
+        - result is success
+        - result.msg.find("Please wait while") == -1
+      retries: 30
+      delay: 5
+      changed_when: false
+      ignore_errors: yes
     - name: Create test job
       jenkins_job:
         config: |
