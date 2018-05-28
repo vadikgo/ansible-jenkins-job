@@ -36,10 +36,10 @@
                 def currentStatus = build.buildStatusSummary.message
                 def cause = build.getCauses()[0] //we keep the first cause
                 def user = cause instanceof Cause.UserIdCause? cause.getUserId():""
-                println "Build: ${build} | Since: ${runningSince} | Status: ${currentStatus} | Cause: ${cause} | User: ${user}" 
+                println "Build: ${build} | Since: ${runningSince} | Status: ${currentStatus} | Cause: ${cause} | User: ${user}"
                 def parameters = build.getAction(ParametersAction)?.parameters
                 parameters.each {
-                  println "Type: ${it.class} Name: ${it.name}, Value: ${it.dump()}" 
+                  println "Type: ${it.class} Name: ${it.name}, Value: ${it.dump()}"
               }
               }
           }
