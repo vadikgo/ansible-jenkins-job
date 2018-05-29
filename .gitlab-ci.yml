@@ -5,6 +5,7 @@ jenkins:
   image: registry.gitlab.com/vladgo/jenkins-docker:2.107.3
   stage: tests
   script:
+    - /usr/local/bin/jenkins.sh &
     - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     - python get-pip.py --user
     - /u01/jenkins/.local/bin/pip install ansible ansible-lint python-jenkins lxml --user
