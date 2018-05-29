@@ -2,16 +2,14 @@ stages:
   - tests
 
 jenkins:
-  variables:
-    PATH: $PATH:/u01/jenkins/.local/bin
   image: registry.gitlab.com/vladgo/jenkins-docker:2.107.3
   stage: tests
   script:
     - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     - python get-pip.py --user
-    - pip install ansible ansible-lint python-jenkins lxml --user
+    - /u01/jenkins/.local/bin/pip install ansible ansible-lint python-jenkins lxml --user
     - cd tests
-    - ansible-lint test.yml
-    - ansible-playbook -v test.yml
+    - /u01/jenkins/.local/bin/ansible-lint test.yml
+    - /u01/jenkins/.local/bin/ansible-playbook -v test.yml
   tags:
     - docker
