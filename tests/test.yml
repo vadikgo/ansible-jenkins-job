@@ -6,15 +6,14 @@
       uri:
         url: http://localhost:8080/cli/
         return_content: yes
-        status_code: 200
       register: result
       until:
-        - result is success
+        - result.status in [200, 403]
         - result.msg.find("Please wait while") == -1
       retries: 30
       delay: 5
       changed_when: false
-      ignore_errors: yes
+
     - name: Create test job
       jenkins_job:
         config: |
