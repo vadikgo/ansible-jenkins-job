@@ -58,7 +58,7 @@
         user: admin
         password: admin
     - name: Test jenkins plugin
-      jenkin_plugin:
+      jenkins_plugin:
         name: blueocean
         jenkins_home: /u01/jenkins
-        
+
