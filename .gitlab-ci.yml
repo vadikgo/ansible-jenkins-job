@@ -2,7 +2,7 @@ stages:
   - tests
 
 jenkins:
-  image: registry.gitlab.com/vladgo/jenkins-docker:2.107.3
+  image: registry.gitlab.com/vladgo/jenkins-docker:2.164.2
   stage: tests
   script:
     - /usr/local/bin/jenkins.sh &
