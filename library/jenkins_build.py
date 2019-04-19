@@ -228,11 +228,11 @@ class JenkinsBuild:
                 for _ in range(1, self.wait_build_timeout):
                     queue_item = self.server.get_queue_item(queue_id)
                     if (queue_item is not None) \
-                        and ('executable' in queue_item) \
-                        and (queue_item['executable'] is not None) \
-                        and ('number' in queue_item['executable']):
-                            self.build_number = queue_item['executable']['number']
-                            break
+                       and ('executable' in queue_item) \
+                       and (queue_item['executable'] is not None) \
+                       and ('number' in queue_item['executable']):
+                        self.build_number = queue_item['executable']['number']
+                        break
                     time.sleep(1)
             except Exception as e:
                 if str(e) == 'Error in request. Possibly authentication failed [500]: Server Error':
