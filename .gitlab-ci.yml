@@ -5,10 +5,11 @@ jenkins:
   image: registry.gitlab.com/vladgo/jenkins-docker:2.164.2
   stage: tests
   script:
+    - chmod 700 ../ansible-jenkins-job
     - /usr/local/bin/jenkins.sh &
     - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     - python get-pip.py --user
-    - /u01/jenkins/.local/bin/pip install ansible ansible-lint python-jenkins lxml --user
+    - /u01/jenkins/.local/bin/pip install ansible ansible-lint python-jenkins>=1.4.0 lxml --user
     - cd tests
     - /u01/jenkins/.local/bin/ansible-lint test.yml
     - /u01/jenkins/.local/bin/ansible-playbook -v test.yml
